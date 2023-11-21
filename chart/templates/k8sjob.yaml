@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Values.job.name }}-job
+spec:
+  ttlSecondsAfterFinished: {{ .Values.podttl | default 3600 }}
+  completions: 1
+  parallelism: 1
+  backoffLimit: {{ .Values.backoffLimit }}
+  template:
+{{- /*
+# To disable istio sidecar injection for pods to reach completion stage.
+*/}}
+    metadata:
+      labels:
+        sidecar.istio.io/inject: {{ .Values.job.istio | default "false"|quote  }}   
+    spec:
+      containers:
+      - name: {{ .Values.job.name }}-container
+        image: {{ .Values.job.image  | default "gcr.io/google-containers/debian-base-amd64:v1.0.1" }}
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        command: [{{ .Values.job.arg | default "'sh', '-c', 'echo Job started on K8s ; date'" }}]
+      restartPolicy: Never
+  backoffLimit: 1

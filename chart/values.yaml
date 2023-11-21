@@ -1,0 +1,20 @@
+successfulJobsHistoryLimit: 2 # keep history of sucess
+failedJobsHistoryLimit: 2 # keep history of fail
+concurrencyPolicy: Replace # Forbid or  Allow # default: Allow
+podttl: 10800 # clean up finished jobs automatically in secs
+backoffLimit: 3 #no of retries after job failed -default 6
+## Cronjob 
+cronjob: 
+  istio: #"true"
+  name: "cronjob-sample" 
+  arg: "'sh','-c','echo you forgot to write your cronjob'"
+  #image: None
+  #schedule: '"*/10 */11 */26 */11 *"'
+
+ ## job
+job: 
+  name: "job-sample" 
+  istio: "false"
+  image: gcr.io/distroless/base@sha256:9707f365e1f5ec65e4dc7c9b03fa92082f09ac9632686713a9d9065d4d0fd0ff   # gcr.io/distroless/base:nonroot
+  arg: "'sh','-c','echo you forgot to write your batch job'"
+

@@ -1,0 +1,47 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Values.cronjob.name }}-cronjob
+spec:
+  schedule: {{ .Values.cronjob.schedule | default "*/5 * * * *" |quote }}
+  successfulJobsHistoryLimit: {{ .Values.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.failedJobsHistoryLimit }}  
+  concurrencyPolicy: {{ .Values.concurrencyPolicy }}
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .Values.backoffLimit }}
+      ttlSecondsAfterFinished: {{ .Values.podttl | default 3600 }}
+      template:
+{{- /*
+# to disable istio sidecar injection for pods to reach completion stage - Optional
+*/}}  
+        metadata:
+          labels:
+            sidecar.istio.io/inject: {{ .Values.cronjob.istio | default "false" |quote }}
+   
+        spec:
+          containers:
+          - name: {{ .Values.cronjob.name }}-cronjob
+            image: {{ .Values.cronjob.image | default "gcr.io/google-containers/debian-base-amd64:v1.0.1" }}
+            imagePullPolicy: IfNotPresent
+            resources:
+              limits:
+                cpu: 100m
+                memory: 128Mi
+              requests:
+                cpu: 100m
+                memory: 128Mi
+#            command: [{{ .Values.cronjob.arg | default "'sh', '-c', 'echo Hello running cronjob on K8s; date'" }}]
+            command:
+            - /bin/sh
+            - -c
+            - /scripts/samplescript.sh
+            volumeMounts:
+            - name: script-dir
+              mountPath: /scripts
+          volumes:
+          - name: script-dir
+            configMap:
+              name: scripts-configmap
+              defaultMode: 0777
+          restartPolicy: Never
