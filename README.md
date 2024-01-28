@@ -15,3 +15,10 @@ sidecar.istio.io/inject: "false"
 https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/  
 https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/  
 
+## Scaling Deployments using cronjob
+```cronjob-for-scaling.yaml``` is a deployment resource which showcases how cronjob can be utilized to scale up and scale down deployments.  Please note additional Role and Rolebinding required for a new serviceaccount for scaling operations.
+However this is not an ideal method to implement solely for cost saving methods. Horizontal pod autoscaling, Vertical Pod Autoscaling are two commonly recommended approaches. 
+Google Kubernetes engine offer multi-dimensional Pod Autoscaling (Pre-GA at the time of writing). 
+https://cloud.google.com/kubernetes-engine/docs/how-to/multidimensional-pod-autoscaling
+
+

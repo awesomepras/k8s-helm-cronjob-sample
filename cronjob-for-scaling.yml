@@ -1,0 +1,122 @@
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: scale-down
+  namespace: cron-ns
+spec:
+  schedule: "*/3 * * * *"
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 100
+      template:
+        spec:
+          serviceAccountName: scheduler-sa
+          containers:
+          - name: cronjob-container
+            image: bitnami/kubectl:1.15-debian-9
+            command:
+              - bash
+            args:
+              - "-xc"
+              - |
+                kubectl scale --replicas=0 --v=7 deployment/nginx-deployment
+          restartPolicy: OnFailure
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: scale-up
+  namespace: cron-ns
+spec:
+  schedule: "*/2 * * * *"
+  successfulJobsHistoryLimit 2
+  failedJobsHistoryLimit 2
+  concurrencyPolicy Replace #Allow, Forbid
+
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 100
+      template:
+        spec:
+          serviceAccountName: scheduler-sa
+          containers:
+          - name: cronjob-container
+            image: bitnami/kubectl:1.15-debian-9
+            command:
+              - bash
+            args:
+              - "-xc"
+              - |
+                kubectl scale --replicas=5 --v=7 deployment/nginx-deployment
+
+          restartPolicy: OnFailure
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+  namespace: cron-ns
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: scheduler-sa
+  namespace: cron-ns
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - delete
+  - list
+  - update
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - deployments/scale
+  verbs:
+  - get
+  - delete
+  - list
+  - update
+  - scale
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: scheduler-sa
+  namespace: cron-ns
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: scheduler-sa
+subjects:
+- kind: ServiceAccount
+  name: scheduler-sa
+  namespace: cron-ns
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: scheduler-sa
+  namespace: cron-ns
